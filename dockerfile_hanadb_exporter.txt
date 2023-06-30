@@ -1,0 +1,51 @@
+FROM opensuse/leap:15.4
+
+#
+
+# Spécifier la commande par défaut à exécuter au lancement du conteneur
+#CMD ["/bin/bash"]
+
+
+#Description and maintainer
+
+LABEL desc="This dockerfile will automate the configuration and installation of hanadb_exporter on a openSUSE image"
+LABEL maintainer="MICHEL Louis <louis.michel@pasapas.com>"
+
+#update & upgrade  
+RUN zypper addrepo -G https://download.opensuse.org/repositories/network:ha-clustering:sap-deployments:devel/openSUSE_Leap_15.4/network:ha-clustering:sap-deployments:devel.repo
+RUN zypper refresh 
+RUN zypper update -y
+
+
+
+#packages install
+
+ARG INSTALL="zypper --non-interactive in"
+RUN ${INSTALL} prometheus-hanadb_exporter
+RUN ${INSTALL} vim
+RUN ${INSTALL} python3-pip
+RUN pip install hdbcli
+RUN pip install dbapi
+
+WORKDIR /usr/etc/hanadb_exporter
+
+
+RUN echo -e '#!/bin/bash\n\ 
+hanadb_exporter -c config.json -m metrics.json\
+' > script.sh
+
+RUN chmod 700 script.sh
+
+
+ENTRYPOINT ["./script.sh"]
+
+
+
+
+
+
+
+
+
+
+
