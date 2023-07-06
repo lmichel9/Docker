@@ -1,0 +1,86 @@
+FROM opensuse/leap:15.4
+
+#
+
+# Spécifier la commande par défaut à exécuter au lancement du conteneur
+#CMD ["/bin/bash"]
+
+
+#Description and maintainer
+
+LABEL desc="This dockerfile will automate the configuration and installation of prometheus on a openSUSE image"
+LABEL maintainer="MICHEL Louis <louis.michel@pasapas.com>"
+
+#update & upgrade 
+
+RUN zypper refresh
+RUN zypper update -y
+RUN zypper lp
+
+
+#packages install
+ARG INSTALL="zypper --non-interactive in"
+RUN ${INSTALL} nano 
+RUN ${INSTALL} wget 
+RUN ${INSTALL} gzip
+RUN ${INSTALL} tar
+
+
+#edit CREATE_MAIL_SPOOl 
+RUN sed -i 's/^CREATE_MAIL_SPOOL=yes/CREATE_MAIL_SPOOL=no/' /etc/default/useradd
+
+
+# Create user, group prometheus
+RUN useradd -m prometheus
+
+# add group
+RUN groupadd prometheus
+RUN usermod -a -G prometheus prometheus
+
+# Switch root to prometheus
+USER prometheus
+WORKDIR /home/prometheus
+
+#get prometheus
+
+RUN wget https://github.com/prometheus/prometheus/releases/download/v2.45.0-rc.0/prometheus-2.45.0-rc.0.linux-amd64.tar.gz
+RUN gzip -d prometheus-2.45.0-rc.0.linux-amd64.tar.gz
+RUN tar -xvf prometheus-2.45.0-rc.0.linux-amd64.tar
+RUN rm -rf prometheus-2.45.0-rc.0.linux-amd64.tar
+RUN chown prometheus:prometheus prometheus-2.45.0-rc.0.linux-amd64
+ 
+USER root
+
+WORKDIR /home
+
+RUN echo -e '#!/bin/bash\n\ 
+cd /home/prometheus/prometheus-2.45.0-rc.0.linux-amd64\n\
+./prometheus \
+' > script.sh
+
+RUN chmod 700 script.sh
+
+
+ENTRYPOINT ["./script.sh"]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
